@@ -21,6 +21,7 @@ class DetailsViewController: UIViewController {
         static var cellIdentifier = { "cellIdentifier" }
         static var alertTitle = { "Добавленно в избранное" }
         static var alertMassage = { "Понравившиеся изображения можно просматреть в разделе избранное" }
+        static var alertDoneTitle = { "Уже есть в избранном" }
         static var addImage = { R.image.likeImage() }
         static var deleteImage = { R.image.trashImage() }
     }
@@ -49,7 +50,7 @@ class DetailsViewController: UIViewController {
     }()
     
     private lazy var addButton: UIButton = {
-       let button = UIButton()
+        let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(Constants.addImage(), for: .normal)
         button.addTarget(self, action: #selector(addButtonPress), for: .touchUpInside)
@@ -60,7 +61,8 @@ class DetailsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        tableView.reloadData()
+        configureView(with: viewModel.photo)
+        navigationController?.navigationBar.isHidden = false
     }
     
     init(viewModel: DetailsViewModel) {
@@ -74,7 +76,7 @@ class DetailsViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .white
-        tableView.reloadData()
+        configureView(with: viewModel.photo)
         view.addSubviews([tableView, addButton])
     }
     
@@ -93,6 +95,12 @@ class DetailsViewController: UIViewController {
             addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
     }
+
+    
+    private func configureView(with photo: PhotoModel) {
+        self.photoModel = photo
+        tableView.reloadData()
+    }
     
     @objc
     private func addButtonPress() {
@@ -106,31 +114,28 @@ class DetailsViewController: UIViewController {
             return
         }
         
-        if realmManager.doesPhotoExist(with: photoModel.id) {
-              print("This photo is already added to favorites.")
-              return
-          }
-        
-        DispatchQueue.global().async {
-            if let imageData = try? Data(contentsOf: imageUrl) {
-                let photoRealmModel = PhotoRealmModel(photoModel: photoModel, imageData: imageData)
-                
-                DispatchQueue.main.async {
-                    self.realmManager.create(photoRealmModel)
-                    
-                    let alertController = UIAlertController(
-                        title: Constants.alertTitle(),
-                        message: Constants.alertMassage(),
-                        preferredStyle: .alert
-                    )
-                    let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
-                    alertController.addAction(okAction)
-                    self.present(alertController, animated: true, completion: nil)
-                }
-            } else {
-                print("Ошибка загрузки изображения")
-            }
+        if viewModel.doesPhotoExist(with: photoModel) {
+            print("This photo is already added to favorites.")
+            let alertController = UIAlertController(
+                title: Constants.alertDoneTitle(),
+                message: .none,
+                preferredStyle: .alert)
+            let okAction = UIAlertAction(title: "OK", style: .default)
+            alertController.addAction(okAction)
+            self.present(alertController, animated: true)
+            return
         }
+        
+        viewModel.addFavourite(with: photoModel, imageUrl: imageUrl)
+        
+        let alertController = UIAlertController(
+            title: Constants.alertTitle(),
+            message: Constants.alertMassage(),
+            preferredStyle: .alert
+        )
+        let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+        alertController.addAction(okAction)
+        self.present(alertController, animated: true, completion: nil)
     }
 }
 
@@ -183,7 +188,7 @@ extension DetailsViewController: UITableViewDelegate, UITableViewDataSource {
         case 1:
             let inputDateFormatter = DateFormatter()
             inputDateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-
+            
             let outputDateFormatter = DateFormatter()
             outputDateFormatter.dateFormat = "dd.MM.yyyy"
             

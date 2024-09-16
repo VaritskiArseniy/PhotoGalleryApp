@@ -13,10 +13,16 @@ protocol FavDetailsViewModelInterface {
 
 class FavDetailsViewModel {
     weak var view: FavDetailsViewControllerInterface?
-    private weak var output: FavDetailsOutput?
+    private let realmManager: RealmManagerProtocol
+    var photo: PhotoRealmModel
     
-    init(output: FavDetailsOutput? = nil) {
-        self.output = output
+    init(photo: PhotoRealmModel, realmManager: RealmManagerProtocol) {
+        self.photo = photo
+        self.realmManager = realmManager
+    }
+    
+    func deletePhoto(_ photo: PhotoRealmModel) {
+        realmManager.delete(photo)
     }
 }
 

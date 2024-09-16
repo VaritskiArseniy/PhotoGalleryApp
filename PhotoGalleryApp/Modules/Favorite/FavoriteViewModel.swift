@@ -7,10 +7,6 @@
 
 import Foundation
 
-protocol FavoriteViewModelInterface {
-
-}
-
 class FavoriteViewModel {
     weak var view: FavoriteViewControllerInterface?
     private weak var output: FavoriteOutput?
@@ -25,6 +21,8 @@ class FavoriteViewModel {
         let photos = realmManager.fetchCollection(PhotoRealmModel.self)
         return Array(photos)
     }
+    
+    func showFavDetails(for photo: PhotoRealmModel) {
+        output?.showFavDetails(for: photo)
+    }
 }
-
-extension FavoriteViewModel: FavoriteViewModelInterface { }

@@ -35,6 +35,7 @@ class FavoriteViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         loadFavorites()
+        navigationController?.navigationBar.isHidden = true
     }
     
     init(viewModel: FavoriteViewModel) {
@@ -153,10 +154,7 @@ extension FavoriteViewController: UICollectionViewDelegate, UICollectionViewData
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedPhoto = photos[indexPath.item]
-        let detailsVC = FavDetailsViewController(viewModel: FavDetailsViewModel())
-        detailsVC.photoModel = selectedPhoto
-        detailsVC.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(detailsVC, animated: true)
+        viewModel.showFavDetails(for: selectedPhoto)
     }
 }
 

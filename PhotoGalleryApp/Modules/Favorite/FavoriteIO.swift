@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol FavoriteOutput: AnyObject { }
-
-protocol FavoriteInput: AnyObject { }
+protocol FavoriteOutput: AnyObject { 
+    func showFavDetails(for photo: PhotoRealmModel)
+}

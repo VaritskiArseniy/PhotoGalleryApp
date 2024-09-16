@@ -13,9 +13,10 @@ protocol MainViewControllerInterface: AnyObject { }
 class MainViewController: UIViewController {
     
     private var viewModel: MainViewModel
-    
+        
     private enum Constants {
         static var cellIndificator = { "cellIndificator" }
+        static var alertTitle = { "Error" }
     }
     
     private var mainCollectionView: UICollectionView = {
@@ -26,12 +27,15 @@ class MainViewController: UIViewController {
     
     private let searchBar = UISearchBar()
     private var photos: [PhotoModel] = []
-    private let apiManager = UnsplashAPIManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        navigationController?.navigationBar.isHidden = true
     }
     
     init(viewModel: MainViewModel) {
@@ -45,11 +49,13 @@ class MainViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .white
-        loadRandomPhotos()
+        bindViewModel()
+        getErrorMessage()
+        viewModel.loadRandomPhotos()
         setupSearchBar()
         setupCollectionView()
+        registerForKeyboardNotification()
         view.addSubviews([searchBar, mainCollectionView])
-        
     }
     
     private func setupConstraints() {
@@ -68,9 +74,30 @@ class MainViewController: UIViewController {
         ])
     }
     
-    func setupSearchBar() {
+    private func bindViewModel() {
+        viewModel.photosDidUpdate = { [weak self] photosVM in
+            self?.photos = photosVM
+            DispatchQueue.main.async {
+                self?.mainCollectionView.reloadData()
+            }
+        }
+    }
+    
+    private func setupSearchBar() {
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.delegate = self
+    }
+    
+    private func registerForKeyboardNotification() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tapOutsideKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        tapGesture.delegate = self
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc
+    private func tapOutsideKeyboard() {
+            view.endEditing(true)
     }
     
     func setupCollectionView() {
@@ -140,22 +167,16 @@ class MainViewController: UIViewController {
         return section
     }
     
-    func loadRandomPhotos() {
-        apiManager.getRandomPhotos { [weak self] photoModels in
-            self?.photos = photoModels
-            DispatchQueue.main.async {
-                self?.mainCollectionView.reloadData()
-            }
+    private func getErrorMessage() {
+        viewModel.showError = { [weak self] errorMessage in
+            self?.showAlert(message: errorMessage)
         }
     }
     
-    func searchPhotos(query: String) {
-        apiManager.searchPhotos(query: query) { [weak self] photos in
-            self?.photos = photos
-            DispatchQueue.main.async {
-                self?.mainCollectionView.reloadData()
-            }
-        }
+    private func showAlert(message: String) {
+        let alert = UIAlertController(title: Constants.alertTitle(), message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
@@ -179,10 +200,7 @@ extension MainViewController: UICollectionViewDelegate, UICollectionViewDataSour
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedPhoto = photos[indexPath.item]
         
-        let detailsVC = DetailsViewController(viewModel: DetailsViewModel())
-        detailsVC.photoModel = selectedPhoto
-        detailsVC.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(detailsVC, animated: true)
+        viewModel.showDetails(photo: selectedPhoto)
     }
 }
 
@@ -193,14 +211,24 @@ extension MainViewController: UISearchBarDelegate {
         }
         
         searchBar.resignFirstResponder()
-        
-        searchPhotos(query: query)
+        viewModel.searchPhotos(query: query)
     }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchText.isEmpty {
-            loadRandomPhotos()
+            viewModel.loadRandomPhotos()
         }
     }
 }
+
+extension MainViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if searchBar.isFirstResponder {
+            return true
+        }
+        
+        return false
+    }
+}
+
 extension MainViewController: MainViewControllerInterface { }

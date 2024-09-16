@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol MainOutput: AnyObject { }
-
-protocol MainInput: AnyObject { }
+protocol MainOutput: AnyObject { 
+    func showDetails(for photo: PhotoModel)
+}

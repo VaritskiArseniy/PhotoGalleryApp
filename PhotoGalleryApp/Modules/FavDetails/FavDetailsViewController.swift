@@ -58,7 +58,8 @@ class FavDetailsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        tableView.reloadData()
+        configureView(with: viewModel.photo)
+        navigationController?.navigationBar.isHidden = false
     }
     
     init(viewModel: FavDetailsViewModel) {
@@ -72,7 +73,7 @@ class FavDetailsViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .white
-        tableView.reloadData()
+        configureView(with: viewModel.photo)
         view.addSubviews([tableView, deleteButton])
     }
     
@@ -92,13 +93,18 @@ class FavDetailsViewController: UIViewController {
         ])
     }
     
+    private func configureView(with photo: PhotoRealmModel) {
+        self.photoModel = photo
+        tableView.reloadData()
+    }
+    
     @objc
     private func deleteButtonPress() {
         guard let deletedModel = photoModel else {
             return
         }
         
-        realmManager.delete(deletedModel)
+        viewModel.deletePhoto(deletedModel)
         navigationController?.popViewController(animated: true)
     }
 }

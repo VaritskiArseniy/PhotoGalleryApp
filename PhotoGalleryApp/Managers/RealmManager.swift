@@ -17,7 +17,15 @@ protocol RealmManagerProtocol {
 }
 
 final class RealmManager {
-    let realm = try! Realm()
+    private let realm: Realm
+
+    init() {
+        do {
+            realm = try Realm()
+        } catch {
+            fatalError("Failed to initialize Realm: \(error)")
+        }
+    }
 }
 
 extension RealmManager: RealmManagerProtocol {

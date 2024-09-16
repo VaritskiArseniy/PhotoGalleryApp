@@ -50,8 +50,16 @@ final class Coordinator {
     }
 }
 
-extension Coordinator: MainOutput { }
+extension Coordinator: MainOutput {
+    func showDetails(for photo: PhotoModel) {
+        let viewController = assembly.makeDetails(photo: photo)
+        navigationController.pushViewController(viewController, animated: true)
+    }
+}
 
-extension Coordinator: DetailsOutput { }
-
-extension Coordinator: FavoriteOutput { }
+extension Coordinator: FavoriteOutput { 
+    func showFavDetails(for photo: PhotoRealmModel) {
+        let viewController = assembly.makeFavDetails(photo: photo)
+        navigationController.pushViewController(viewController, animated: true)
+    }
+}
